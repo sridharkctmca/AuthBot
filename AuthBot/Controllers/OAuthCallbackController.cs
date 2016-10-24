@@ -44,12 +44,6 @@ namespace AuthBot.Controllers
         [HttpGet]
         [Route("api/OAuthCallback")]
         public async Task<HttpResponseMessage> OAuthCallback(
-            //[FromUri] string userId, 
-            //[FromUri] string botId, 
-            //[FromUri] string conversationId, 
-            //[FromUri] string channelId, 
-            //[FromUri] string serviceUrl, 
-            //[FromUri] string locale, 
             [FromUri] string code, 
             [FromUri] string state, 
             CancellationToken cancellationToken)
@@ -57,8 +51,7 @@ namespace AuthBot.Controllers
             try
             {
 
-                var queryParams = HttpUtility.ParseQueryString(AzureActiveDirectoryHelper.TokenDecoder(state));
-
+                var queryParams = state;
                 object tokenCache = null;
                 if (string.Equals(AuthSettings.Mode, "v1", StringComparison.OrdinalIgnoreCase))
                 {
@@ -72,8 +65,7 @@ namespace AuthBot.Controllers
                 {
                 }
 
-                // Get the resumption cookie
-                var resumptionCookie = new ResumptionCookie(queryParams["userId"], queryParams["botId"], queryParams["conversationId"], queryParams["channelId"], queryParams["serviceUrl"], queryParams["locale"]);
+                var resumptionCookie = UrlToken.Decode<ResumptionCookie>(queryParams);
                 // Create the message that is send to conversation to resume the login flow
                 var message = resumptionCookie.GetMessage();
                
@@ -163,7 +155,7 @@ namespace AuthBot.Controllers
 
 //*********************************************************
 //
-//AuthBot, https://github.com/matvelloso/AuthBot
+//AuthBot, https://github.com/microsoftdx/AuthBot
 //
 //Copyright (c) Microsoft Corporation
 //All rights reserved.

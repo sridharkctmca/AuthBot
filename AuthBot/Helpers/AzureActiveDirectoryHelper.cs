@@ -102,22 +102,25 @@ namespace AuthBot.Helpers
 
         private static string BuildExtraParameters(ResumptionCookie resumptionCookie)
         {
-            var queryString = HttpUtility.ParseQueryString(string.Empty);
-            queryString["userId"] = resumptionCookie.Address.UserId;
-            queryString["botId"] = resumptionCookie.Address.BotId;
-            queryString["conversationId"] = resumptionCookie.Address.ConversationId;
-            queryString["serviceUrl"] = resumptionCookie.Address.ServiceUrl;
-            queryString["channelId"] = resumptionCookie.Address.ChannelId;
-            queryString["locale"] = resumptionCookie.Locale ?? "en";
+            var encodedCookie = UrlToken.Encode(resumptionCookie);
 
-            return TokenEncoder(queryString.ToString());
+            //var queryString = HttpUtility.ParseQueryString(string.Empty);
+            //queryString["userId"] = resumptionCookie.Address.UserId;
+            //queryString["botId"] = resumptionCookie.Address.BotId;
+            //queryString["conversationId"] = resumptionCookie.Address.ConversationId;
+            //queryString["serviceUrl"] = resumptionCookie.Address.ServiceUrl;
+            //queryString["channelId"] = resumptionCookie.Address.ChannelId;
+            //queryString["locale"] = resumptionCookie.Locale ?? "en";
+
+            //return TokenEncoder(queryString.ToString());
+            return encodedCookie;
         }
     }
 }
 
 //*********************************************************
 //
-//AuthBot, https://github.com/matvelloso/AuthBot
+//AuthBot, https://github.com/microsoftdx/AuthBot
 //
 //Copyright (c) Microsoft Corporation
 //All rights reserved.

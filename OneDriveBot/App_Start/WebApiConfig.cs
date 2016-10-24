@@ -33,7 +33,7 @@ namespace OneDriveBot
 
 //*********************************************************
 //
-//AuthBot, https://github.com/matvelloso/AuthBot
+//AuthBot, https://github.com/microsoftdx/AuthBot
 //
 //Copyright (c) Microsoft Corporation
 //All rights reserved.
