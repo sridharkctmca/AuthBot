@@ -15,15 +15,18 @@ namespace AuthBot.Dialogs
     [Serializable]
     public class AzureAuthDialog : IDialog<string>
     {
-        private string resourceId;
-        private string[] scopes;
-        private string prompt;
+        protected string resourceId { get; }
+        protected string[] scopes { get; }
+        protected string prompt { get; }
 
-        public AzureAuthDialog(string resourceId)
+
+
+        public AzureAuthDialog(string resourceId, string prompt = "Please click to sign in: ")
         {
             this.resourceId = resourceId;
+            this.prompt = prompt;
         }
-        public AzureAuthDialog(string[] scopes,string prompt="Please click to sign in: ")
+        public AzureAuthDialog(string[] scopes, string prompt = "Please click to sign in: ")
         {
             this.scopes = scopes;
             this.prompt = prompt;
@@ -40,7 +43,7 @@ namespace AuthBot.Dialogs
             var msg = await argument;
 
             AuthResult authResult;
-            string validated="";
+            string validated = "";
             int magicNumber = 0;
             if (context.UserData.TryGetValue(ContextConstants.AuthResultKey, out authResult))
             {
@@ -63,7 +66,7 @@ namespace AuthBot.Dialogs
                     else
                     {
 
-                        if (magicNumber.ToString()==msg.Text.Substring(0,6))
+                        if (magicNumber.ToString() == msg.Text.Substring(0, 6))
                         {
                             context.UserData.SetValue<string>(ContextConstants.MagicNumberValidated, "true");
                             context.Done($"Thanks {authResult.UserName}. You are now logged in. ");
@@ -85,20 +88,56 @@ namespace AuthBot.Dialogs
             }
             else
             {
-
-                if (this.resourceId!=null)
-                    await this.LogIn(context, msg,resourceId);
-                else
-                    await this.LogIn(context, msg, scopes);
-                
+                await this.LogIn(context, msg);
             }
         }
 
-        private async Task LogIn(IDialogContext context, IMessageActivity msg, string[] scopes)
+        /// <summary>
+        /// Prompts the user to login. This can be overridden inorder to allow custom prompt messages or cards per channel.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="msg"></param>
+        /// <param name="authenticationUrl"></param>
+        /// <returns></returns>
+        protected virtual async Task PromptLogin(IDialogContext context, IMessageActivity msg, string authenticationUrl)
+        {
+            if (msg.ChannelId == "skype")
+            {
+                IMessageActivity response = context.MakeMessage();
+                response.Recipient = msg.From;
+                response.Type = "message";
+
+                response.Attachments = new List<Attachment>();
+                List<CardAction> cardButtons = new List<CardAction>();
+                CardAction plButton = new CardAction()
+                {
+                    Value = authenticationUrl,
+                    Type = "signin",
+                    Title = "Authentication Required"
+                };
+
+                cardButtons.Add(plButton);
+                SigninCard plCard = new SigninCard(this.prompt, new List<CardAction>() { plButton });
+                Attachment plAttachment = plCard.ToAttachment();
+                response.Attachments.Add(plAttachment);
+                await context.PostAsync(response);
+            }
+            else
+            {
+                await context.PostAsync(this.prompt + "[Click here](" + authenticationUrl + ")");
+            }
+        }
+
+
+        private async Task LogIn(IDialogContext context, IMessageActivity msg)
         {
             try
             {
-                string token = await context.GetAccessToken(scopes);
+                string token;
+                if (resourceId != null)
+                    token = await context.GetAccessToken(resourceId);
+                else
+                    token = await context.GetAccessToken(scopes);
 
                 if (string.IsNullOrEmpty(token))
                 {
@@ -111,66 +150,13 @@ namespace AuthBot.Dialogs
                     {
                         var resumptionCookie = new ResumptionCookie(msg);
 
-                        var authenticationUrl = await AzureActiveDirectoryHelper.GetAuthUrlAsync(resumptionCookie, scopes);
-
-                        if (msg.ChannelId == "skype" )
-                        {
-                             IMessageActivity response = context.MakeMessage();
-                             response.Recipient = msg.From;
-                            response.Type = "message";
-
-                            response.Attachments = new List<Attachment>();
-                            List<CardAction> cardButtons = new List<CardAction>();
-                            CardAction plButton = new CardAction()
-                            { 
-                                Value = authenticationUrl,
-                                Type = "signin",
-                                Title = "Authentication Required"
-                            };
-
-                            cardButtons.Add(plButton);
-                            SigninCard plCard = new SigninCard(this.prompt, new List<CardAction>() { plButton });
-                            Attachment plAttachment = plCard.ToAttachment();
-                            response.Attachments.Add(plAttachment);
-                            await context.PostAsync(response);
-                        }
+                        string authenticationUrl;
+                        if (resourceId != null)
+                            authenticationUrl = await AzureActiveDirectoryHelper.GetAuthUrlAsync(resumptionCookie, resourceId);
                         else
-                        {
-                            await context.PostAsync(this.prompt + "[Click here](" + authenticationUrl + ")");
-                        }
-                        context.Wait(this.MessageReceivedAsync);
-                    }
-                }
-                else
-                {
-                    context.Done(string.Empty);
-                }
-            }catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-        private async Task LogIn(IDialogContext context, IMessageActivity msg, string resourceId)
-        {
-            try
-            {
-                string token = await context.GetAccessToken(resourceId);
+                            authenticationUrl = await AzureActiveDirectoryHelper.GetAuthUrlAsync(resumptionCookie, scopes);
 
-                if (string.IsNullOrEmpty(token))
-                {
-                    if (msg.Text != null &&
-                      CancellationWords.GetCancellationWords().Contains(msg.Text.ToUpper()))
-                    {
-                        context.Done(string.Empty);
-                    }
-                    else
-                    {
-                        var resumptionCookie = new ResumptionCookie(msg);
-
-                        var authenticationUrl = await AzureActiveDirectoryHelper.GetAuthUrlAsync(resumptionCookie, resourceId);
-
-                        await context.PostAsync($"You must be authenticated before you can proceed. Please, click [here]({authenticationUrl}) to log into your account.");
-
+                        await PromptLogin(context, msg, authenticationUrl);
                         context.Wait(this.MessageReceivedAsync);
                     }
                 }
@@ -184,7 +170,6 @@ namespace AuthBot.Dialogs
                 throw ex;
             }
         }
-
     }
 }
 
