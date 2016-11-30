@@ -99,35 +99,57 @@ namespace AuthBot.Dialogs
         /// <param name="msg"></param>
         /// <param name="authenticationUrl"></param>
         /// <returns></returns>
-        protected virtual async Task PromptLogin(IDialogContext context, IMessageActivity msg, string authenticationUrl)
+        protected virtual Task PromptLogin(IDialogContext context, IMessageActivity msg, string authenticationUrl)
         {
-            if (msg.ChannelId == "skype")
+            Attachment plAttachment = null;
+            switch (msg.ChannelId)
             {
-                IMessageActivity response = context.MakeMessage();
-                response.Recipient = msg.From;
-                response.Type = "message";
-
-                response.Attachments = new List<Attachment>();
-                List<CardAction> cardButtons = new List<CardAction>();
-                CardAction plButton = new CardAction()
-                {
-                    Value = authenticationUrl,
-                    Type = "signin",
-                    Title = "Authentication Required"
-                };
-
-                cardButtons.Add(plButton);
-                SigninCard plCard = new SigninCard(this.prompt, new List<CardAction>() { plButton });
-                Attachment plAttachment = plCard.ToAttachment();
-                response.Attachments.Add(plAttachment);
-                await context.PostAsync(response);
+                case "emulator":
+                case "skype":
+                    {
+                        SigninCard plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "signin"));
+                        plAttachment = plCard.ToAttachment();
+                        break;
+                    }
+                // Teams does not yet support signin cards
+                case "msteams":
+                    {
+                        ThumbnailCard plCard = new ThumbnailCard()
+                        {
+                            Title = this.prompt,
+                            Subtitle = "",
+                            Images = new List<CardImage>(),
+                            Buttons = GetCardActions(authenticationUrl, "openUrl")
+                        };
+                        plAttachment = plCard.ToAttachment();
+                        break;
+                    }
+                default:
+                    return context.PostAsync(this.prompt + "[Click here](" + authenticationUrl + ")");
             }
-            else
-            {
-                await context.PostAsync(this.prompt + "[Click here](" + authenticationUrl + ")");
-            }
+
+            IMessageActivity response = context.MakeMessage();
+            response.Recipient = msg.From;
+            response.Type = "message";
+
+            response.Attachments = new List<Attachment>();
+            response.Attachments.Add(plAttachment);
+
+            return context.PostAsync(response);
         }
 
+        private List<CardAction> GetCardActions(string authenticationUrl, string actionType)
+        {
+            List<CardAction> cardButtons = new List<CardAction>();
+            CardAction plButton = new CardAction()
+            {
+                Value = authenticationUrl,
+                Type = actionType,
+                Title = "Authentication Required"
+            };
+            cardButtons.Add(plButton);
+            return cardButtons;
+        }
 
         private async Task LogIn(IDialogContext context, IMessageActivity msg)
         {
