@@ -95,10 +95,10 @@ namespace AuthBot.Dialogs
         /// <summary>
         /// Prompts the user to login. This can be overridden inorder to allow custom prompt messages or cards per channel.
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="msg"></param>
-        /// <param name="authenticationUrl"></param>
-        /// <returns></returns>
+        /// <param name="context">Chat context</param>
+        /// <param name="msg">Chat message</param>
+        /// <param name="authenticationUrl">OAuth URL for authenticating user</param>
+        /// <returns>Task from Posting or prompt to the context.</returns>
         protected virtual Task PromptLogin(IDialogContext context, IMessageActivity msg, string authenticationUrl)
         {
             Attachment plAttachment = null;
