@@ -11,7 +11,7 @@ namespace AuthBot.Dialogs
     using Autofac;
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
-
+    
     [Serializable]
     public class AzureAuthDialog : IDialog<string>
     {
@@ -44,43 +44,53 @@ namespace AuthBot.Dialogs
             int magicNumber = 0;
             if (context.UserData.TryGetValue(ContextConstants.AuthResultKey, out authResult))
             {
-                //IMPORTANT: DO NOT REMOVE THE MAGIC NUMBER CHECK THAT WE DO HERE. THIS IS AN ABSOLUTE SECURITY REQUIREMENT
-                //REMOVING THIS WILL REMOVE YOUR BOT AND YOUR USERS TO SECURITY VULNERABILITIES. 
-                //MAKE SURE YOU UNDERSTAND THE ATTACK VECTORS AND WHY THIS IS IN PLACE.
-                context.UserData.TryGetValue<string>(ContextConstants.MagicNumberValidated, out validated);
-                if (validated == "true")
+                try
                 {
-                    context.Done($"Thanks {authResult.UserName}. You are now logged in. ");
-                }
-                else if (context.UserData.TryGetValue<int>(ContextConstants.MagicNumberKey, out magicNumber))
-                {
-                    if (msg.Text == null)
+                    //IMPORTANT: DO NOT REMOVE THE MAGIC NUMBER CHECK THAT WE DO HERE. THIS IS AN ABSOLUTE SECURITY REQUIREMENT
+                    //REMOVING THIS WILL REMOVE YOUR BOT AND YOUR USERS TO SECURITY VULNERABILITIES. 
+                    //MAKE SURE YOU UNDERSTAND THE ATTACK VECTORS AND WHY THIS IS IN PLACE.
+                    context.UserData.TryGetValue<string>(ContextConstants.MagicNumberValidated, out validated);
+                    if (validated == "true")
                     {
-                        await context.PostAsync($"Please paste back the number you received in your authentication screen.");
-
-                        context.Wait(this.MessageReceivedAsync);
+                        context.Done($"Thanks {authResult.UserName}. You are now logged in. ");
                     }
-                    else
+                    else if (context.UserData.TryGetValue<int>(ContextConstants.MagicNumberKey, out magicNumber))
                     {
-
-                        if (magicNumber.ToString()==msg.Text.Substring(0,6))
+                        if (msg.Text == null)
                         {
-                            context.UserData.SetValue<string>(ContextConstants.MagicNumberValidated, "true");
-                            context.Done($"Thanks {authResult.UserName}. You are now logged in. ");
-                        }
-                        else
-                        {
-                            context.UserData.RemoveValue(ContextConstants.AuthResultKey);
-                            context.UserData.SetValue<string>(ContextConstants.MagicNumberValidated, "false");
-                            context.UserData.RemoveValue(ContextConstants.MagicNumberKey);
-                            await context.PostAsync($"I'm sorry but I couldn't validate your number. Please try authenticating once again. ");
-                            await context.PostAsync("channel: " + msg.ChannelId);
-                            await context.PostAsync("text: " + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(msg.Text)));
-                            await context.PostAsync("magic number: " + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(magicNumber.ToString())));
+                            await context.PostAsync($"Please paste back the number you received in your authentication screen.");
 
                             context.Wait(this.MessageReceivedAsync);
                         }
+                        else
+                        {
+
+                            if (msg.Text.Length >= 6 && magicNumber.ToString() == msg.Text.Substring(0, 6))
+                            {
+                                context.UserData.SetValue<string>(ContextConstants.MagicNumberValidated, "true");
+                                context.Done($"Thanks {authResult.UserName}. You are now logged in. ");
+                            }
+                            else
+                            {
+                                context.UserData.RemoveValue(ContextConstants.AuthResultKey);
+                                context.UserData.SetValue<string>(ContextConstants.MagicNumberValidated, "false");
+                                context.UserData.RemoveValue(ContextConstants.MagicNumberKey);
+                                await context.PostAsync($"I'm sorry but I couldn't validate your number. Please try authenticating once again. ");
+                                await context.PostAsync("channel: " + msg.ChannelId);
+                                await context.PostAsync("text: " + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(msg.Text)));
+                                await context.PostAsync("magic number: " + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(magicNumber.ToString())));
+
+                                context.Wait(this.MessageReceivedAsync);
+                            }
+                        }
                     }
+                }
+                catch
+                {
+                    context.UserData.RemoveValue(ContextConstants.AuthResultKey);
+                    context.UserData.SetValue(ContextConstants.MagicNumberValidated, "false");
+                    context.UserData.RemoveValue(ContextConstants.MagicNumberKey);
+                    context.Done($"I'm sorry but something went wrong while authenticating.");
                 }
             }
             else
