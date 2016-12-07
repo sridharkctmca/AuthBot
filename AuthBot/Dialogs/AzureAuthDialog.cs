@@ -109,7 +109,7 @@ namespace AuthBot.Dialogs
         /// <param name="msg">Chat message</param>
         /// <param name="authenticationUrl">OAuth URL for authenticating user</param>
         /// <returns>Task from Posting or prompt to the context.</returns>
-        protected virtual Task PromptLogin(IDialogContext context, IMessageActivity msg, string authenticationUrl)
+        protected virtual Task PromptToLogin(IDialogContext context, IMessageActivity msg, string authenticationUrl)
         {
             Attachment plAttachment = null;
             switch (msg.ChannelId)
