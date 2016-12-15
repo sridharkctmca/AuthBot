@@ -123,7 +123,7 @@ namespace AuthBot.Controllers
                     else
                     {
                         await Conversation.ResumeAsync(resumptionCookie, message);
-                        resp.Content = new StringContent($"<html><body>Almost done! Please copy this number and paste it back to your chat so your authentication can complete: {magicNumber}.</body></html>", System.Text.Encoding.UTF8, @"text/html");
+                        resp.Content = new StringContent($"<html><body>Almost done! Please copy this number and paste it back to your chat so your authentication can complete:<br/> <h1>{magicNumber}</h1>.</body></html>", System.Text.Encoding.UTF8, @"text/html");
                     }
                     return resp;
                 }
