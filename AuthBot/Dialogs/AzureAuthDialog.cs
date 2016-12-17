@@ -79,9 +79,6 @@ namespace AuthBot.Dialogs
                                 context.UserData.SetValue<string>(ContextConstants.MagicNumberValidated, "false");
                                 context.UserData.RemoveValue(ContextConstants.MagicNumberKey);
                                 await context.PostAsync($"I'm sorry but I couldn't validate your number. Please try authenticating once again. ");
-                                await context.PostAsync("channel: " + msg.ChannelId);
-                                await context.PostAsync("text: " + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(msg.Text)));
-                                await context.PostAsync("magic number: " + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(magicNumber.ToString())));
 
                                 context.Wait(this.MessageReceivedAsync);
                             }
