@@ -132,7 +132,12 @@ namespace AuthBot.Dialogs
                         break;
                     }
                 default:
-                    return context.PostAsync(this.prompt + "[Click here](" + authenticationUrl + ")");
+                    {
+                        SigninCard plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "signin"));
+                        plAttachment = plCard.ToAttachment();
+                        break;
+                    }
+//                    return context.PostAsync(this.prompt + "[Click here](" + authenticationUrl + ")");
             }
 
             IMessageActivity response = context.MakeMessage();
