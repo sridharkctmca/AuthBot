@@ -1,10 +1,10 @@
 # AuthBot
 
-## Note: This project has been discontinued. Please use BotAuth from now on:
+## Note: This project has been discontinued. Please use the new authentication support built into Bot Framework:
 
-https://github.com/MicrosoftDX/botauth 
+https://docs.microsoft.com/en-us/azure/bot-service/bot-builder-tutorial-authentication?view=azure-bot-service-3.0
 
-https://www.nuget.org/packages/BotAuth/
+## AuthBot will receive no new updates or fixes, so I highly suggest you to port your code to the official, built in support inside Bot Service.
 
 AuthBot is a .Net library for Azure Active Directory authentication on bots built via Microsoft Bot Framework.
 
